@@ -252,6 +252,11 @@
     0% { transform: translateY(14px) scale(0.97); opacity: 0; }
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
+  .reccard-art {
+    max-width: 200px;
+    margin-bottom: 14px;
+  }
+  .reccard-art .cardart { margin-bottom: 0; }
   .rec-tag {
     font-family: 'DM Mono', monospace;
     font-size: 10.5px;
@@ -317,7 +322,69 @@
   .runner-name { flex: 1; font-size: 14px; font-weight: 600; }
   .runner-rate { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--paper-dim); }
 
-  /* ---------- wallet (your cards) ---------- */
+  /* ---------- generated card art ---------- */
+  .cardart {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.586 / 1;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 10px 24px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .cardart::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 15%, rgba(255,255,255,0.16), transparent 55%);
+    pointer-events: none;
+  }
+  .cardart-chip {
+    width: 30px; height: 22px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.45));
+    position: relative;
+  }
+  .cardart-chip::before, .cardart-chip::after {
+    content: '';
+    position: absolute;
+    background: rgba(0,0,0,0.18);
+  }
+  .cardart-chip::before { left: 5px; right: 5px; top: 50%; height: 1.5px; transform: translateY(-50%); }
+  .cardart-chip::after { top: 5px; bottom: 5px; left: 50%; width: 1.5px; transform: translateX(-50%); }
+  .cardart-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .cardart-issuer {
+    font-family: 'DM Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.92);
+    font-weight: 500;
+  }
+  .cardart-bottom { display: flex; align-items: flex-end; justify-content: space-between; }
+  .cardart-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.96);
+    max-width: 75%;
+    line-height: 1.2;
+  }
+  .cardart-network {
+    font-family: 'Sora', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+  }
+  .cardart-dots { display: flex; gap: 3px; align-items: center; }
+  .cardart-dots span { width: 13px; height: 13px; border-radius: 50%; display: block; }
+
   .card {
     position: relative;
     border-radius: var(--r);
@@ -660,6 +727,7 @@
 
     const per100 = (top.rate).toFixed(top.rate % 1 === 0 ? 0 : 1);
     let html = '<div class="reccard">';
+    html += '<div class="reccard-art">' + cardArtHtml(top.card.name) + '</div>';
     html += '<div class="rec-tag">★ Use this one' +
             (state.placeName ? ' · ' + escapeHtml(state.placeName) : '') + '</div>';
     html += '<div class="rec-name">' + escapeHtml(top.card.name) + '</div>';
@@ -684,6 +752,48 @@
     stage.innerHTML = html;
   }
 
+  // ---------- card art: detect issuer from name, generate branded visual ----------
+  // Colors are each issuer's real, publicly-known brand color (not their artwork).
+  const ISSUERS = [
+    { key: 'chase',     test: /chase/i,                          label: 'Chase',           bg: 'linear-gradient(135deg, #0A4DA1, #06335E)', network: 'visa' },
+    { key: 'amex',      test: /amex|american express/i,          label: 'American Express', bg: 'linear-gradient(135deg, #1F8FC2, #006FCF)', network: 'amex' },
+    { key: 'citi',      test: /citi/i,                            label: 'Citi',            bg: 'linear-gradient(135deg, #1F1F1F, #003A70)', network: 'mastercard' },
+    { key: 'discover',  test: /discover/i,                        label: 'Discover',        bg: 'linear-gradient(135deg, #FF6000, #B14600)', network: 'discover' },
+    { key: 'capone',    test: /capital ?one/i,                    label: 'Capital One',     bg: 'linear-gradient(135deg, #D03027, #931E17)', network: 'mastercard' },
+    { key: 'wells',     test: /wells ?fargo/i,                    label: 'Wells Fargo',     bg: 'linear-gradient(135deg, #D71E2B, #8E1217)', network: 'visa' },
+    { key: 'boa',       test: /bank of america|bofa/i,            label: 'Bank of America', bg: 'linear-gradient(135deg, #E31837, #00205B)', network: 'visa' },
+    { key: 'usbank',    test: /u\.?s\.? bank/i,                   label: 'U.S. Bank',       bg: 'linear-gradient(135deg, #002F6C, #00153A)', network: 'visa' },
+    { key: 'barclays',  test: /barclays/i,                        label: 'Barclays',        bg: 'linear-gradient(135deg, #00AEEF, #007BB6)', network: 'mastercard' },
+    { key: 'synchrony', test: /synchrony/i,                       label: 'Synchrony',       bg: 'linear-gradient(135deg, #5C2D91, #371A5C)', network: 'mastercard' },
+  ];
+  const DEFAULT_ISSUER = { key: 'generic', label: 'Card', bg: 'linear-gradient(135deg, #3A4452, #1C232E)', network: 'generic' };
+
+  function detectIssuer(name) {
+    for (const iss of ISSUERS) {
+      if (iss.test.test(name)) return iss;
+    }
+    return DEFAULT_ISSUER;
+  }
+
+  function networkMark(network) {
+    switch (network) {
+      case 'visa': return '<span class="cardart-network">VISA</span>';
+      case 'mastercard': return '<span class="cardart-dots"><span style="background:#EB5640;"></span><span style="background:#F4A828;margin-left:-6px;mix-blend-mode:screen;"></span></span>';
+      case 'amex': return '<span class="cardart-network">AMEX</span>';
+      case 'discover': return '<span class="cardart-network">DISCOVER</span>';
+      default: return '<span class="cardart-network">CARD</span>';
+    }
+  }
+
+  function cardArtHtml(cardName) {
+    const issuer = detectIssuer(cardName);
+    return '<div class="cardart" style="background:' + issuer.bg + ';">' +
+      '<div class="cardart-top"><span class="cardart-issuer">' + escapeHtml(issuer.label) + '</span>' +
+      '<div class="cardart-chip"></div></div>' +
+      '<div class="cardart-bottom"><span class="cardart-name">' + escapeHtml(cardName) + '</span>' +
+      networkMark(issuer.network) + '</div></div>';
+  }
+
   function renderWallet() {
     const w = $('wallet');
     if (state.cards.length === 0) {
@@ -700,6 +810,7 @@
           '<span class="rate"><b>' + (val % 1 === 0 ? val : val.toFixed(1)) + '%</b> ' + catLabel(cat) + '</span>'
         ).join('');
       div.innerHTML =
+        cardArtHtml(card.name) +
         '<div class="card-head"><div class="card-name">' + escapeHtml(card.name) +
         '</div><button class="card-del" title="Remove">×</button></div>' +
         '<div class="rates">' + rates + '</div>';
