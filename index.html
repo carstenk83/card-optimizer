@@ -170,10 +170,16 @@
     border-radius: 999px;
     padding: 7px 14px;
     cursor: pointer;
-    transition: transform 0.15s, background 0.15s;
+    transition: transform 0.15s, background 0.15s, color 0.15s;
+    flex-shrink: 0;
   }
   .loc-btn:hover { background: #fff; }
   .loc-btn:active { transform: scale(0.96); }
+  .loc-btn.on {
+    background: var(--win);
+    color: #0A2A1E;
+  }
+  .loc-btn.on:hover { background: #6EE0B0; }
 
   /* ---------- category chips ---------- */
   .cat-row {
@@ -592,6 +598,16 @@
   // ---------- rendering ----------
   const $ = (id) => document.getElementById(id);
 
+  // device detection: mobile vs desktop — combine UA hint with a
+  // touch+coarse-pointer check so a touchscreen laptop isn't mistaken for a
+  // phone, and a resized desktop window isn't either.
+  function detectIsMobile() {
+    const uaMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    return uaMobile && coarsePointer;
+  }
+  const isMobile = detectIsMobile();
+
   function renderChips() {
     const row = $('catRow');
     row.innerHTML = '';
@@ -767,27 +783,56 @@
     }
   };
 
-  // ---------- geolocation ----------
+  // ---------- geolocation (on/off toggle) ----------
+  let watchId = null;
+
   $('locBtn').onclick = () => {
+    if (state.locOn) {
+      turnLocationOff();
+    } else {
+      turnLocationOn();
+    }
+  };
+
+  function turnLocationOn() {
     if (!navigator.geolocation) {
       setLocLabel('Location isn\'t available in this browser. Pick a category instead.');
       return;
     }
-    setLocLabel('Finding you…');
+    state.locOn = true;
+    $('locBtn').textContent = 'Location on';
+    $('locBtn').classList.add('on');
     $('pulse').classList.add('live');
-    navigator.geolocation.getCurrentPosition(onGeoOk, onGeoErr, {
+    setLocLabel('Finding you…');
+
+    watchId = navigator.geolocation.watchPosition(onGeoOk, onGeoErr, {
       enableHighAccuracy: true, timeout: 10000, maximumAge: 60000,
     });
-  };
+  }
+
+  function turnLocationOff() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    state.locOn = false;
+    state.placeName = null;
+    $('locBtn').textContent = isMobile ? 'Use location' : 'Try location anyway';
+    $('locBtn').classList.remove('on');
+    $('pulse').classList.remove('live');
+    setLocLabel('Location off — pick a category below, or turn it on.');
+  }
 
   function onGeoOk(pos) {
     const { latitude, longitude } = pos.coords;
-    state.locOn = true;
     lookupPlace(latitude, longitude);
   }
 
   function onGeoErr(err) {
     $('pulse').classList.remove('live');
+    $('locBtn').textContent = isMobile ? 'Use location' : 'Try location anyway';
+    $('locBtn').classList.remove('on');
+    state.locOn = false;
     setLocLabel('Couldn\'t get location (' + (err.code === 1 ? 'permission denied' : 'unavailable') + '). Pick a category below.');
   }
 
@@ -839,15 +884,7 @@
     }[m]));
   }
 
-  // ---------- device detection: mobile vs desktop ----------
-  // Combine UA hint with a touch+coarse-pointer check so a touchscreen laptop
-  // isn't mistaken for a phone, and a resized desktop window isn't either.
-  function detectIsMobile() {
-    const uaMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    return uaMobile && coarsePointer;
-  }
-  const isMobile = detectIsMobile();
+  // ---------- device-specific setup ----------
   document.body.classList.add(isMobile ? 'is-mobile' : 'is-desktop');
 
   if (!isMobile) {
