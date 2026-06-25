@@ -733,7 +733,16 @@
       const b = document.createElement('button');
       b.className = 'chip' + (state.category === c.id ? ' on' : '');
       b.textContent = c.label;
-      b.onclick = () => { state.category = c.id; renderChips(); renderRec(); };
+      b.onclick = () => {
+        if (state.category === c.id) {
+          state.category = null;
+          state.placeName = null;
+        } else {
+          state.category = c.id;
+        }
+        renderChips();
+        renderRec();
+      };
       row.appendChild(b);
     });
   }
