@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tap-card-optimizer-v1';
+const CACHE_NAME = 'tap-card-optimizer-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
