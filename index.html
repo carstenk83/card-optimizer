@@ -47,6 +47,54 @@
     padding: 28px 20px 120px;
   }
 
+  /* ---------- desktop layout ---------- */
+  @media (min-width: 880px) {
+    body {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 60px 24px;
+    }
+    .wrap {
+      max-width: 920px;
+      padding: 0;
+    }
+    header { margin-bottom: 30px; }
+    h1 { font-size: 38px; }
+    .sub { font-size: 15px; }
+
+    .loc { padding: 18px 20px; }
+
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .desktop-col .seclabel:first-child { margin-top: 0; }
+
+    .toggle-add, .add { max-width: 100%; }
+
+    /* hover affordances only make sense with a mouse */
+    .chip:hover, .loc-btn:hover, .save:hover, .toggle-add:hover {
+      cursor: pointer;
+    }
+    .card:hover { border-color: var(--mute); }
+
+    footer { text-align: left; max-width: 480px; }
+  }
+
+  /* a small inline note shown only on desktop, replacing reliance on GPS */
+  .desktop-note {
+    display: none;
+    font-size: 12px;
+    color: var(--mute);
+    margin-top: 10px;
+  }
+  @media (min-width: 880px) {
+    .desktop-note { display: block; }
+  }
+
   /* ---------- header ---------- */
   header { margin-bottom: 24px; }
   .eyebrow {
@@ -461,33 +509,38 @@
       <button class="loc-btn" id="locBtn">Use location</button>
     </div>
     <div class="cat-row" id="catRow"></div>
+    <div class="desktop-note" id="desktopNote">Heads up — precise location works best on your phone. On a computer, picking a category manually is usually more reliable.</div>
   </div>
 
-  <!-- RECOMMENDATION -->
-  <div class="seclabel">Best card right now</div>
-  <div class="stage" id="stage">
-    <div class="empty-rec" id="emptyRec">Add a card and pick a category to see your best option.</div>
-  </div>
-
-  <!-- WALLET -->
-  <div class="seclabel">Your wallet</div>
-  <div id="wallet"></div>
-
-  <button class="toggle-add" id="toggleAdd">+ Add a card</button>
-
-  <!-- ADD FORM -->
-  <div class="add hidden" id="addForm">
-    <div class="field">
-      <label class="flabel" for="cardName">Card name</label>
-      <input type="text" id="cardName" placeholder="e.g. Chase Freedom Flex" autocomplete="off">
+  <div class="desktop-grid">
+    <div class="desktop-col">
+      <!-- RECOMMENDATION -->
+      <div class="seclabel">Best card right now</div>
+      <div class="stage" id="stage">
+        <div class="empty-rec" id="emptyRec">Add a card and pick a category to see your best option.</div>
+      </div>
     </div>
-    <div class="field">
-      <label class="flabel">Rewards rates</label>
-      <div class="rate-rows" id="rateRows"></div>
-      <div class="rate-grid">
-        <select id="rateCat"></select>
-        <div class="ratein-wrap">
-          <input type="text" class="ratein" id="rateVal" placeholder="3" inputmode="decimal">
+
+    <div class="desktop-col">
+      <!-- WALLET -->
+      <div class="seclabel">Your wallet</div>
+      <div id="wallet"></div>
+
+      <button class="toggle-add" id="toggleAdd">+ Add a card</button>
+
+      <!-- ADD FORM -->
+      <div class="add hidden" id="addForm">
+        <div class="field">
+          <label class="flabel" for="cardName">Card name</label>
+          <input type="text" id="cardName" placeholder="e.g. Chase Freedom Flex" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="flabel">Rewards rates</label>
+          <div class="rate-rows" id="rateRows"></div>
+          <div class="rate-grid">
+            <select id="rateCat"></select>
+            <div class="ratein-wrap">
+              <input type="text" class="ratein" id="rateVal" placeholder="3" inputmode="decimal">
           <span class="ratein-suffix">%</span>
         </div>
       </div>
@@ -495,6 +548,8 @@
     </div>
     <button class="save" id="saveCard">Save card to wallet</button>
     <p class="hint">Tip: set an "Everything else" rate so it always has a fallback.</p>
+  </div>
+    </div>
   </div>
 
   <footer>
@@ -782,6 +837,26 @@
     return String(s).replace(/[&<>"']/g, m => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     }[m]));
+  }
+
+  // ---------- device detection: mobile vs desktop ----------
+  // Combine UA hint with a touch+coarse-pointer check so a touchscreen laptop
+  // isn't mistaken for a phone, and a resized desktop window isn't either.
+  function detectIsMobile() {
+    const uaMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    return uaMobile && coarsePointer;
+  }
+  const isMobile = detectIsMobile();
+  document.body.classList.add(isMobile ? 'is-mobile' : 'is-desktop');
+
+  if (!isMobile) {
+    // Desktop: geolocation in a browser is usually IP-based and city-level at
+    // best, so steer people toward the manual chips instead of over-promising.
+    $('locBtn').textContent = 'Try location anyway';
+    $('locLabel').textContent = 'On a computer? Pick a category below — it\u2019s usually more accurate than browser location.';
+  } else {
+    $('desktopNote').remove();
   }
 
   // ---------- init ----------
