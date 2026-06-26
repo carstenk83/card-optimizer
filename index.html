@@ -56,7 +56,14 @@
   }
 
   /* ---------- header ---------- */
-  header { margin-bottom: 22px; }
+  header { margin-bottom: 22px; animation: section-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  @keyframes section-in {
+    0% { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    header, .loc { animation: none; }
+  }
   .brand-row {
     display: flex;
     align-items: center;
@@ -101,6 +108,7 @@
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
     padding: 14px 15px;
+    animation: section-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.06s backwards;
   }
   .loc-top {
     display: flex;
@@ -174,10 +182,11 @@
     border-radius: 7px;
     padding: 6px 11px;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: border-color 0.12s, color 0.12s, background 0.12s, transform 0.12s;
     white-space: nowrap;
   }
   .chip:hover { border-color: var(--faint); color: var(--paper); }
+  .chip:active { transform: scale(0.96); }
   .chip.on {
     background: var(--signal-dim);
     color: var(--paper);
@@ -210,6 +219,14 @@
     padding: 18px;
     background: var(--panel);
     border: 1px solid var(--signal);
+    animation: rec-in 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes rec-in {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reccard { animation: none; }
   }
   .reccard-art {
     max-width: 168px;
@@ -244,6 +261,15 @@
     color: var(--paper);
     letter-spacing: -0.01em;
     line-height: 1;
+    display: inline-block;
+    animation: rate-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards;
+  }
+  @keyframes rate-in {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rec-mult { animation: none; }
   }
   .rec-mult-unit { font-size: 14px; font-weight: 500; color: var(--muted); }
   .rec-why {
@@ -266,8 +292,16 @@
     padding: 10px 0;
     border-bottom: 1px solid var(--line);
     font-size: 13px;
+    animation: runner-in 0.36s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
   .runner:last-child { border-bottom: none; }
+  @keyframes runner-in {
+    0% { opacity: 0; transform: translateX(-4px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .runner { animation: none; }
+  }
   .runner-rank {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -334,6 +368,19 @@
     margin-bottom: 10px;
     background: var(--panel);
     border: 1px solid var(--line);
+    overflow: hidden;
+    animation: card-in 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes card-in {
+    0% { opacity: 0; transform: translateY(8px) scale(0.985); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes card-out {
+    0% { opacity: 1; transform: scale(1); max-height: 400px; }
+    100% { opacity: 0; transform: scale(0.96); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
   }
   .card-head {
     display: flex;
@@ -443,6 +490,14 @@
     font-size: 12px;
     color: var(--paper);
     line-height: 1.45;
+    animation: banner-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes banner-in {
+    0% { opacity: 0; transform: translateY(-3px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .preset-banner { animation: none; }
   }
   .preset-check {
     flex-shrink: 0;
@@ -784,7 +839,8 @@
 
     const rest = ranked.slice(1).filter(r => r.rate > 0);
     rest.forEach((r, i) => {
-      html += '<div class="runner">' +
+      const delay = (0.1 + i * 0.05).toFixed(2);
+      html += '<div class="runner" style="animation-delay:' + delay + 's">' +
         '<span class="runner-rank mono">' + (i + 2) + '</span>' +
         '<span class="runner-name">' + escapeHtml(r.card.name) + '</span>' +
         '<span class="runner-rate">' + (r.rate).toFixed(r.rate % 1 === 0 ? 0 : 1) + '%</span>' +
@@ -929,8 +985,11 @@
         '</div><button class="card-del" title="Remove">\u00d7</button></div>' +
         '<div class="rates">' + rates + '</div>';
       div.querySelector('.card-del').onclick = () => {
-        state.cards = state.cards.filter(c => c.id !== card.id);
-        renderWallet(); renderRec();
+        div.style.animation = 'card-out 0.22s cubic-bezier(0.4, 0, 1, 1) forwards';
+        div.addEventListener('animationend', () => {
+          state.cards = state.cards.filter(c => c.id !== card.id);
+          renderWallet(); renderRec();
+        }, { once: true });
       };
       w.appendChild(div);
     });
