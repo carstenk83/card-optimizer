@@ -25,6 +25,8 @@
     --faint: #5C626F;
     --signal: #4C7CF0;
     --signal-dim: #2E3F66;
+    --live: #4CAF7D;
+    --live-dim: #1F4434;
     --warn: #C77B4A;
     --r: 10px;
     --r-lg: 14px;
@@ -123,13 +125,13 @@
     margin-top: 6px;
     position: relative;
   }
-  .pulse.live { background: var(--signal); }
+  .pulse.live { background: var(--live); }
   .pulse.live::after {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: 50%;
-    border: 1px solid var(--signal);
+    border: 1px solid var(--live);
     animation: ring 2s ease-out infinite;
   }
   @keyframes ring {
@@ -160,8 +162,8 @@
   }
   .loc-btn:hover { background: var(--line-soft); border-color: var(--faint); }
   .loc-btn.on {
-    background: var(--signal-dim);
-    border-color: var(--signal);
+    background: var(--live-dim);
+    border-color: var(--live);
     color: var(--paper);
   }
 
