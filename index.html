@@ -711,6 +711,7 @@
     locOn: false,
     placeName: null,
     pendingRates: {},   // rates being built in the form
+    manualOverride: false, // true once the user explicitly deselects a chip; pauses GPS auto-pick until they pick something themselves
   };
 
   // ---------- rendering ----------
@@ -735,10 +736,14 @@
       b.textContent = c.label;
       b.onclick = () => {
         if (state.category === c.id) {
+          // user is explicitly turning this category off — respect that
+          // even if location is on, until they pick something themselves
           state.category = null;
           state.placeName = null;
+          state.manualOverride = true;
         } else {
           state.category = c.id;
+          state.manualOverride = false;
         }
         renderChips();
         renderRec();
@@ -1139,6 +1144,7 @@
       return;
     }
     state.locOn = true;
+    state.manualOverride = false;
     $('locBtn').textContent = 'Location on';
     $('locBtn').classList.add('on');
     $('pulse').classList.add('live');
@@ -1190,9 +1196,14 @@
       const data = await res.json();
       const guess = guessCategory(data.elements || []);
       if (guess) {
-        state.category = guess.cat;
-        state.placeName = guess.name;
-        setLocLabel('You seem to be at <b>' + escapeHtml(guess.name) + '</b> — ' + catLabel(guess.cat) + '. Tap a chip to change.');
+        if (!state.manualOverride) {
+          state.category = guess.cat;
+          state.placeName = guess.name;
+          setLocLabel('You seem to be at <b>' + escapeHtml(guess.name) + '</b> — ' + catLabel(guess.cat) + '. Tap a chip to change.');
+        } else {
+          // user deselected manually — show where they are without forcing the category back on
+          setLocLabel('You seem to be at <b>' + escapeHtml(guess.name) + '</b>. Tap a chip to pick a category.');
+        }
       } else {
         state.placeName = null;
         setLocLabel('Found you, but couldn\'t tell the place type. Pick a category below.');
