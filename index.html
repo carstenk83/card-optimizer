@@ -3,48 +3,553 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Tap — which card wins</title>
+<title>Card Router</title>
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#0E1116">
+<meta name="theme-color" content="#0B0D12">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tap">
+<meta name="apple-mobile-web-app-title" content="Card Router">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   :root {
-    --ink: #0E1116;
-    --ink-soft: #161B22;
-    --panel: #1C232E;
-    --edge: #2A3340;
-    --paper: #F3F0E9;
-    --paper-dim: #B9B6AE;
-    --mute: #6D7888;
-    --win: #5BD6A0;
-    --win-deep: #1F8F63;
-    --accent: #E8C46A;
-    --r: 18px;
+    --ink: #0B0D12;
+    --panel: #14171D;
+    --panel-raised: #181B22;
+    --line: #242832;
+    --line-soft: #1C2027;
+    --paper: #ECEEF1;
+    --muted: #8B92A0;
+    --faint: #5C626F;
+    --signal: #4C7CF0;
+    --signal-dim: #2E3F66;
+    --warn: #C77B4A;
+    --r: 10px;
+    --r-lg: 14px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html { -webkit-text-size-adjust: 100%; }
 
   body {
-    font-family: 'Sora', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     background: var(--ink);
     color: var(--paper);
     min-height: 100vh;
     line-height: 1.5;
     overflow-x: hidden;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-feature-settings: "tnum";
   }
 
   .wrap {
     max-width: 480px;
     margin: 0 auto;
-    padding: 28px 20px 120px;
+    padding: 28px 20px 110px;
+  }
+
+  /* ---------- header ---------- */
+  header { margin-bottom: 22px; }
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 18px;
+  }
+  .brand-mark {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    background: var(--signal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 12px; height: 12px; }
+  .brand-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--paper);
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--paper);
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin-top: 6px;
+    max-width: 38ch;
+    line-height: 1.5;
+  }
+
+  /* ---------- location bar ---------- */
+  .loc {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 14px 15px;
+  }
+  .loc-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .pulse {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--faint);
+    flex-shrink: 0;
+    margin-top: 6px;
+    position: relative;
+  }
+  .pulse.live { background: var(--signal); }
+  .pulse.live::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid var(--signal);
+    animation: ring 2s ease-out infinite;
+  }
+  @keyframes ring {
+    0% { transform: scale(0.7); opacity: 0.7; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .loc-label {
+    font-size: 12.5px;
+    color: var(--muted);
+    flex: 1;
+    line-height: 1.5;
+    padding-top: 1px;
+  }
+  .loc-label b { color: var(--paper); font-weight: 600; }
+  .loc-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--paper);
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 11px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .loc-btn:hover { background: var(--line-soft); border-color: var(--faint); }
+  .loc-btn.on {
+    background: var(--signal-dim);
+    border-color: var(--signal);
+    color: var(--paper);
+  }
+
+  /* ---------- category chips ---------- */
+  .cat-row {
+    margin-top: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 11px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--faint); color: var(--paper); }
+  .chip.on {
+    background: var(--signal-dim);
+    color: var(--paper);
+    border-color: var(--signal);
+  }
+
+  /* ---------- section labels ---------- */
+  .seclabel {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 30px 0 12px;
+  }
+
+  /* ---------- recommendation stage ---------- */
+  .stage { position: relative; min-height: 56px; }
+  .empty-rec {
+    color: var(--faint);
+    font-size: 13px;
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .reccard {
+    position: relative;
+    border-radius: var(--r-lg);
+    padding: 18px;
+    background: var(--panel);
+    border: 1px solid var(--signal);
+  }
+  .reccard-art {
+    max-width: 168px;
+    margin-bottom: 16px;
+  }
+  .reccard-art .cardart { margin-bottom: 0; }
+  .rec-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin-bottom: 10px;
+  }
+  .rec-name {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+  }
+  .rec-rate {
+    margin-top: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+  .rec-mult {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--paper);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .rec-mult-unit { font-size: 14px; font-weight: 500; color: var(--muted); }
+  .rec-why {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .rec-earn {
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .rec-earn b { color: var(--paper); font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+
+  .runner {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .runner:last-child { border-bottom: none; }
+  .runner-rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--faint);
+    width: 14px;
+    flex-shrink: 0;
+  }
+  .runner-name { flex: 1; color: var(--muted); }
+  .runner-rate { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--paper); font-weight: 500; }
+
+  /* ---------- generated card art ---------- */
+  .cardart {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.586 / 1;
+    border-radius: 9px;
+    padding: 13px 15px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .cardart-chip {
+    width: 24px; height: 18px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.55);
+    position: relative;
+  }
+  .cardart-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .cardart-issuer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.78);
+    font-weight: 500;
+  }
+  .cardart-bottom { display: flex; align-items: flex-end; justify-content: space-between; }
+  .cardart-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.95);
+    max-width: 75%;
+    line-height: 1.2;
+  }
+  .cardart-network {
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.7);
+  }
+  .cardart-dots { display: flex; align-items: center; }
+  .cardart-dots span { width: 11px; height: 11px; border-radius: 50%; display: block; opacity: 0.85; }
+
+  /* ---------- wallet (your cards) ---------- */
+  .card {
+    position: relative;
+    border-radius: var(--r-lg);
+    padding: 16px;
+    margin-bottom: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .card-name {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: var(--paper);
+  }
+  .card-del {
+    background: none;
+    border: none;
+    color: var(--faint);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .card-del:hover { color: var(--warn); }
+  .rates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+  }
+  .rate {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 3px 8px;
+    color: var(--muted);
+  }
+  .rate b { color: var(--paper); font-weight: 500; }
+
+  /* ---------- add card form ---------- */
+  .add {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 16px;
+  }
+  .field { margin-bottom: 14px; position: relative; }
+  .field:last-of-type { margin-bottom: 0; }
+  label.flabel {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    color: var(--paper);
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--signal); }
+  input::placeholder { color: var(--faint); }
+
+  /* ---------- preset autocomplete ---------- */
+  .suggest-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 20;
+    box-shadow: 0 16px 32px -12px rgba(0,0,0,0.6);
+  }
+  .suggest-item {
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: var(--paper);
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--line);
+  }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:hover, .suggest-item.active { background: var(--ink); }
+
+  .preset-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 9px;
+    padding: 9px 11px;
+    background: var(--signal-dim);
+    border: 1px solid var(--signal);
+    border-radius: 7px;
+    font-size: 12px;
+    color: var(--paper);
+    line-height: 1.45;
+  }
+  .preset-check {
+    flex-shrink: 0;
+    color: var(--signal);
+    font-weight: 700;
+    margin-top: 1px;
+  }
+
+  .rate-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .rate-grid select, .rate-grid .ratein {
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--paper);
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+  .rate-grid select:focus, .rate-grid .ratein:focus { outline: none; border-color: var(--signal); }
+  .ratein { width: 88px; text-align: right; }
+  .ratein-wrap { position: relative; display: flex; align-items: center; }
+  .ratein-suffix {
+    position: absolute; right: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--faint);
+    pointer-events: none;
+  }
+  .ratein { padding-right: 24px; }
+
+  .rate-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+  .rate-line {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px;
+  }
+  .rate-line .rl-cat { flex: 1; font-weight: 500; color: var(--paper); }
+  .rate-line .rl-val { font-family: 'IBM Plex Mono', monospace; color: var(--signal); font-size: 12px; }
+  .rate-line .rl-x {
+    background: none; border: none; color: var(--faint);
+    cursor: pointer; font-size: 15px; padding: 0 2px;
+  }
+  .rate-line .rl-x:hover { color: var(--warn); }
+
+  .addrate-btn {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .addrate-btn:hover { border-color: var(--faint); color: var(--paper); }
+
+  .save {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: opacity 0.15s;
+  }
+  .save:hover { opacity: 0.9; }
+
+  .hint {
+    font-size: 11.5px;
+    color: var(--faint);
+    margin-top: 9px;
+  }
+
+  .toggle-add {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--paper);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .toggle-add:hover { border-color: var(--faint); }
+  .hidden { display: none; }
+
+  footer {
+    font-size: 11px;
+    color: var(--faint);
+    margin-top: 34px;
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
   }
 
   /* ---------- desktop layout ---------- */
@@ -59,594 +564,74 @@
       max-width: 920px;
       padding: 0;
     }
-    header { margin-bottom: 30px; }
-    h1 { font-size: 38px; }
-    .sub { font-size: 15px; }
-
-    .loc { padding: 18px 20px; }
+    header { margin-bottom: 26px; }
+    h1 { font-size: 25px; }
+    .sub { font-size: 14px; }
+    .loc { padding: 16px 18px; }
 
     .desktop-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 28px;
+      gap: 26px;
       align-items: start;
     }
     .desktop-col .seclabel:first-child { margin-top: 0; }
-
     .toggle-add, .add { max-width: 100%; }
-
-    /* hover affordances only make sense with a mouse */
-    .chip:hover, .loc-btn:hover, .save:hover, .toggle-add:hover {
-      cursor: pointer;
-    }
-    .card:hover { border-color: var(--mute); }
-
-    footer { text-align: left; max-width: 480px; }
+    .card:hover { border-color: var(--faint); }
+    footer { max-width: 480px; }
   }
 
-  /* a small inline note shown only on desktop, replacing reliance on GPS */
   .desktop-note {
     display: none;
-    font-size: 12px;
-    color: var(--mute);
+    font-size: 11.5px;
+    color: var(--faint);
     margin-top: 10px;
   }
   @media (min-width: 880px) {
     .desktop-note { display: block; }
-  }
-
-  /* ---------- header ---------- */
-  header { margin-bottom: 24px; }
-  .eyebrow {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--mute);
-    margin-bottom: 8px;
-  }
-  h1 {
-    font-size: 30px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.05;
-  }
-  h1 .tap {
-    color: var(--accent);
-  }
-  .sub {
-    color: var(--paper-dim);
-    font-size: 14px;
-    margin-top: 8px;
-    max-width: 36ch;
-  }
-
-  /* ---------- location bar ---------- */
-  .loc {
-    margin-top: 22px;
-    background: var(--ink-soft);
-    border: 1px solid var(--edge);
-    border-radius: var(--r);
-    padding: 16px;
-  }
-  .loc-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .pulse {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--mute);
-    flex-shrink: 0;
-    position: relative;
-  }
-  .pulse.live { background: var(--win); }
-  .pulse.live::after {
-    content: '';
-    position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    border: 1px solid var(--win);
-    animation: ring 1.8s ease-out infinite;
-  }
-  @keyframes ring {
-    0% { transform: scale(0.6); opacity: 0.9; }
-    100% { transform: scale(2.2); opacity: 0; }
-  }
-  .loc-label {
-    font-size: 13px;
-    color: var(--paper-dim);
-    flex: 1;
-  }
-  .loc-label b { color: var(--paper); font-weight: 600; }
-  .loc-btn {
-    font-family: 'Sora', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ink);
-    background: var(--paper);
-    border: none;
-    border-radius: 999px;
-    padding: 7px 14px;
-    cursor: pointer;
-    transition: transform 0.15s, background 0.15s, color 0.15s;
-    flex-shrink: 0;
-  }
-  .loc-btn:hover { background: #fff; }
-  .loc-btn:active { transform: scale(0.96); }
-  .loc-btn.on {
-    background: var(--win);
-    color: #0A2A1E;
-  }
-  .loc-btn.on:hover { background: #6EE0B0; }
-
-  /* ---------- category chips ---------- */
-  .cat-row {
-    margin-top: 14px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .chip {
-    font-family: 'Sora', sans-serif;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--paper-dim);
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 999px;
-    padding: 7px 13px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .chip:hover { border-color: var(--mute); color: var(--paper); }
-  .chip.on {
-    background: var(--paper);
-    color: var(--ink);
-    border-color: var(--paper);
-  }
-
-  /* ---------- section labels ---------- */
-  .seclabel {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--mute);
-    margin: 32px 0 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .seclabel::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--edge);
-  }
-
-  /* ---------- recommendation stage ---------- */
-  .stage { position: relative; min-height: 60px; }
-  .empty-rec {
-    text-align: center;
-    color: var(--mute);
-    font-size: 13.5px;
-    padding: 20px 10px;
-    border: 1px dashed var(--edge);
-    border-radius: var(--r);
-  }
-
-  .reccard {
-    position: relative;
-    border-radius: var(--r);
-    padding: 20px;
-    overflow: hidden;
-    background: linear-gradient(135deg, var(--win-deep), #134d36);
-    border: 1px solid rgba(91,214,160,0.4);
-    box-shadow: 0 18px 40px -18px rgba(91,214,160,0.5);
-    animation: rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-  @keyframes rise {
-    0% { transform: translateY(14px) scale(0.97); opacity: 0; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  .reccard-art {
-    max-width: 200px;
-    margin-bottom: 14px;
-  }
-  .reccard-art .cardart { margin-bottom: 0; }
-  .rec-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--win);
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 12px;
-  }
-  .rec-name {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .rec-rate {
-    margin-top: 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .rec-mult {
-    font-size: 38px;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.02em;
-    line-height: 1;
-  }
-  .rec-mult-unit { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.8); }
-  .rec-why {
-    font-size: 13px;
-    color: rgba(243,240,233,0.85);
-    margin-top: 4px;
-  }
-  .rec-earn {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,0.15);
-    font-size: 13px;
-    color: rgba(243,240,233,0.9);
-  }
-  .rec-earn b { color: #fff; font-weight: 700; }
-
-  /* runners-up */
-  .runner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: var(--ink-soft);
-    border: 1px solid var(--edge);
-    margin-top: 8px;
-  }
-  .runner-rank {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--mute);
-    width: 18px;
-    flex-shrink: 0;
-  }
-  .runner-name { flex: 1; font-size: 14px; font-weight: 600; }
-  .runner-rate { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--paper-dim); }
-
-  /* ---------- generated card art ---------- */
-  .cardart {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1.586 / 1;
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 10px 24px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.08);
-  }
-  .cardart::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 85% 15%, rgba(255,255,255,0.16), transparent 55%);
-    pointer-events: none;
-  }
-  .cardart-chip {
-    width: 30px; height: 22px;
-    border-radius: 4px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.45));
-    position: relative;
-  }
-  .cardart-chip::before, .cardart-chip::after {
-    content: '';
-    position: absolute;
-    background: rgba(0,0,0,0.18);
-  }
-  .cardart-chip::before { left: 5px; right: 5px; top: 50%; height: 1.5px; transform: translateY(-50%); }
-  .cardart-chip::after { top: 5px; bottom: 5px; left: 50%; width: 1.5px; transform: translateX(-50%); }
-  .cardart-top { display: flex; align-items: flex-start; justify-content: space-between; }
-  .cardart-issuer {
-    font-family: 'DM Mono', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.92);
-    font-weight: 500;
-  }
-  .cardart-bottom { display: flex; align-items: flex-end; justify-content: space-between; }
-  .cardart-name {
-    font-family: 'Sora', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.96);
-    max-width: 75%;
-    line-height: 1.2;
-  }
-  .cardart-network {
-    font-family: 'Sora', sans-serif;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    color: rgba(255,255,255,0.85);
-    font-style: italic;
-  }
-  .cardart-dots { display: flex; gap: 3px; align-items: center; }
-  .cardart-dots span { width: 13px; height: 13px; border-radius: 50%; display: block; }
-
-  .card {
-    position: relative;
-    border-radius: var(--r);
-    padding: 18px;
-    margin-bottom: 12px;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-  }
-  .card-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .card-name {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .card-del {
-    background: none;
-    border: none;
-    color: var(--mute);
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    padding: 2px 4px;
-    transition: color 0.15s;
-    flex-shrink: 0;
-  }
-  .card-del:hover { color: #E8746A; }
-  .rates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 12px;
-  }
-  .rate {
-    font-family: 'DM Mono', monospace;
-    font-size: 11.5px;
-    background: var(--ink);
-    border: 1px solid var(--edge);
-    border-radius: 7px;
-    padding: 4px 9px;
-    color: var(--paper-dim);
-  }
-  .rate b { color: var(--accent); font-weight: 500; }
-
-  /* ---------- add card form ---------- */
-  .add {
-    background: var(--ink-soft);
-    border: 1px solid var(--edge);
-    border-radius: var(--r);
-    padding: 18px;
-  }
-  .field { margin-bottom: 14px; }
-  .field:last-of-type { margin-bottom: 0; }
-  label.flabel {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--paper-dim);
-    margin-bottom: 7px;
-  }
-  input[type="text"] {
-    width: 100%;
-    font-family: 'Sora', sans-serif;
-    font-size: 15px;
-    color: var(--paper);
-    background: var(--ink);
-    border: 1px solid var(--edge);
-    border-radius: 10px;
-    padding: 11px 13px;
-    transition: border-color 0.15s;
-  }
-  input[type="text"]:focus { outline: none; border-color: var(--accent); }
-  input::placeholder { color: var(--mute); }
-
-  /* ---------- card preset autocomplete ---------- */
-  .field { position: relative; }
-  .suggest-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: 4px;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 10px;
-    overflow: hidden;
-    z-index: 20;
-    box-shadow: 0 12px 28px -10px rgba(0,0,0,0.5);
-  }
-  .suggest-item {
-    padding: 10px 13px;
-    font-size: 14px;
-    color: var(--paper);
-    cursor: pointer;
-    transition: background 0.12s;
-    border-bottom: 1px solid var(--edge);
-  }
-  .suggest-item:last-child { border-bottom: none; }
-  .suggest-item:hover, .suggest-item.active { background: var(--ink); }
-  .suggest-item b { color: var(--accent); font-weight: 600; }
-
-  .preset-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin-top: 9px;
-    padding: 9px 11px;
-    background: rgba(91,214,160,0.1);
-    border: 1px solid rgba(91,214,160,0.35);
-    border-radius: 9px;
-    font-size: 12.5px;
-    color: var(--win);
-    line-height: 1.4;
-  }
-  .preset-check {
-    flex-shrink: 0;
-    font-weight: 700;
-  }
-
-  .rate-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: center;
-  }
-  .rate-grid select, .rate-grid .ratein {
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    color: var(--paper);
-    background: var(--ink);
-    border: 1px solid var(--edge);
-    border-radius: 10px;
-    padding: 10px 12px;
-  }
-  .rate-grid select:focus, .rate-grid .ratein:focus { outline: none; border-color: var(--accent); }
-  .ratein { width: 90px; text-align: right; }
-  .ratein-wrap { position: relative; display: flex; align-items: center; }
-  .ratein-suffix {
-    position: absolute; right: 12px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px; color: var(--mute);
-    pointer-events: none;
-  }
-  .ratein { padding-right: 26px; }
-
-  .rate-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .rate-line {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px;
-  }
-  .rate-line .rl-cat { flex: 1; font-weight: 600; }
-  .rate-line .rl-val { font-family: 'DM Mono', monospace; color: var(--accent); }
-  .rate-line .rl-x {
-    background: none; border: none; color: var(--mute);
-    cursor: pointer; font-size: 16px; padding: 0 2px;
-  }
-  .rate-line .rl-x:hover { color: #E8746A; }
-
-  .addrate-btn {
-    width: 100%;
-    font-family: 'Sora', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--paper-dim);
-    background: none;
-    border: 1px dashed var(--edge);
-    border-radius: 10px;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .addrate-btn:hover { border-color: var(--mute); color: var(--paper); }
-
-  .save {
-    width: 100%;
-    font-family: 'Sora', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--ink);
-    background: var(--accent);
-    border: none;
-    border-radius: 12px;
-    padding: 13px;
-    cursor: pointer;
-    margin-top: 16px;
-    transition: transform 0.15s, background 0.15s;
-  }
-  .save:hover { background: #f0cd76; }
-  .save:active { transform: scale(0.98); }
-
-  .hint {
-    font-size: 12px;
-    color: var(--mute);
-    margin-top: 10px;
-    text-align: center;
-  }
-
-  .toggle-add {
-    width: 100%;
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--paper);
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 12px;
-    padding: 13px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .toggle-add:hover { border-color: var(--mute); }
-  .hidden { display: none; }
-
-  footer {
-    text-align: center;
-    font-size: 11px;
-    color: var(--mute);
-    margin-top: 36px;
-    line-height: 1.6;
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Pocket card optimizer</div>
-    <h1>Know which card to <span class="tap">tap</span>.</h1>
-    <p class="sub">Tell it where you are. It tells you which card in your wallet earns the most right here.</p>
+    <div class="brand-row">
+      <span class="brand-mark">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="3" width="14" height="10" rx="1.5" stroke="white" stroke-width="1.3"/>
+          <rect x="1" y="6" width="14" height="2" fill="white"/>
+        </svg>
+      </span>
+      <span class="brand-name">Card Router</span>
+    </div>
+    <h1>Best card for where you are</h1>
+    <p class="sub">Matches your location to the highest reward rate across the cards in your wallet.</p>
   </header>
 
-  <!-- LOCATION -->
   <div class="loc">
     <div class="loc-top">
       <div class="pulse" id="pulse"></div>
-      <div class="loc-label" id="locLabel">Location off — pick a category below, or turn it on.</div>
-      <button class="loc-btn" id="locBtn">Use location</button>
+      <div class="loc-label" id="locLabel">Location off — select a category below, or enable it.</div>
+      <button class="loc-btn" id="locBtn">Enable location</button>
     </div>
     <div class="cat-row" id="catRow"></div>
-    <div class="desktop-note" id="desktopNote">Heads up — precise location works best on your phone. On a computer, picking a category manually is usually more reliable.</div>
+    <div class="desktop-note" id="desktopNote">Browser location on desktop is typically IP-based and city-level. Selecting a category manually is usually more accurate here.</div>
   </div>
 
   <div class="desktop-grid">
     <div class="desktop-col">
-      <!-- RECOMMENDATION -->
-      <div class="seclabel">Best card right now</div>
+      <div class="seclabel">Recommended card</div>
       <div class="stage" id="stage">
-        <div class="empty-rec" id="emptyRec">Add a card and pick a category to see your best option.</div>
+        <div class="empty-rec" id="emptyRec">Add a card and select a category to see a recommendation.</div>
       </div>
     </div>
 
     <div class="desktop-col">
-      <!-- WALLET -->
-      <div class="seclabel">Your wallet</div>
+      <div class="seclabel">Wallet</div>
       <div id="wallet"></div>
 
-      <button class="toggle-add" id="toggleAdd">+ Add a card</button>
+      <button class="toggle-add" id="toggleAdd">Add a card</button>
 
-      <!-- ADD FORM -->
       <div class="add hidden" id="addForm">
         <div class="field">
           <label class="flabel" for="cardName">Card name</label>
@@ -658,30 +643,31 @@
           </div>
         </div>
         <div class="field">
-          <label class="flabel">Rewards rates</label>
+          <label class="flabel">Reward rates</label>
           <div class="rate-rows" id="rateRows"></div>
           <div class="rate-grid">
             <select id="rateCat"></select>
             <div class="ratein-wrap">
               <input type="text" class="ratein" id="rateVal" placeholder="3" inputmode="decimal">
-          <span class="ratein-suffix">%</span>
+              <span class="ratein-suffix">%</span>
+            </div>
+          </div>
+          <button class="addrate-btn" id="addRateBtn" style="margin-top:8px;">Add rate</button>
         </div>
+        <button class="save" id="saveCard">Save card</button>
+        <p class="hint">Set an "Everything else" rate so the card always has a fallback.</p>
       </div>
-      <button class="addrate-btn" id="addRateBtn" style="margin-top:8px;">+ Add this rate</button>
-    </div>
-    <button class="save" id="saveCard">Save card to wallet</button>
-    <p class="hint">Tip: set an "Everything else" rate so it always has a fallback.</p>
-  </div>
     </div>
   </div>
 
   <footer>
-    Prototype — runs entirely on your device, nothing is saved or sent anywhere.<br>
-    Reward rates are whatever you enter; always double-check your card's current terms.
+    Runs entirely on your device — nothing is saved or transmitted.<br>
+    Reward rates reflect what you enter; verify against your card's current terms.
   </footer>
 </div>
 
 <script>
+
   // ---------- categories ----------
   const CATEGORIES = [
     { id: 'grocery',   label: 'Groceries' },
@@ -695,7 +681,6 @@
     { id: 'other',     label: 'Everything else' },
   ];
 
-  // map OpenStreetMap place types -> our categories
   const OSM_MAP = {
     supermarket: 'grocery', grocery: 'grocery', greengrocer: 'grocery', convenience: 'grocery',
     restaurant: 'dining', cafe: 'dining', fast_food: 'dining', bar: 'dining', pub: 'dining', food_court: 'dining',
@@ -706,20 +691,16 @@
   };
 
   let state = {
-    cards: [],          // {id, name, rates: {catId: number}}
-    category: null,     // selected category id
+    cards: [],
+    category: null,
     locOn: false,
     placeName: null,
-    pendingRates: {},   // rates being built in the form
-    manualOverride: false, // true once the user explicitly deselects a chip; pauses GPS auto-pick until they pick something themselves
+    pendingRates: {},
+    manualOverride: false,
   };
 
-  // ---------- rendering ----------
   const $ = (id) => document.getElementById(id);
 
-  // device detection: mobile vs desktop — combine UA hint with a
-  // touch+coarse-pointer check so a touchscreen laptop isn't mistaken for a
-  // phone, and a resized desktop window isn't either.
   function detectIsMobile() {
     const uaMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
@@ -736,8 +717,6 @@
       b.textContent = c.label;
       b.onclick = () => {
         if (state.category === c.id) {
-          // user is explicitly turning this category off — respect that
-          // even if location is on, until they pick something themselves
           state.category = null;
           state.placeName = null;
           state.manualOverride = true;
@@ -758,7 +737,6 @@
   }
 
   function bestForCategory(catId) {
-    // returns sorted array of {card, rate} desc
     return state.cards.map(card => {
       const specific = card.rates[catId];
       const fallback = card.rates['other'];
@@ -775,8 +753,8 @@
     if (!state.category || state.cards.length === 0) {
       stage.innerHTML = '<div class="empty-rec">' +
         (state.cards.length === 0
-          ? 'Add a card to your wallet first.'
-          : 'Pick a category (or turn on location) to see your best card.') +
+          ? 'Add a card to your wallet to get started.'
+          : 'Select a category, or enable location, to see a recommendation.') +
         '</div>';
       return;
     }
@@ -785,7 +763,7 @@
     const top = ranked[0];
 
     if (!top || top.rate === 0) {
-      stage.innerHTML = '<div class="empty-rec">None of your cards list a rate for ' +
+      stage.innerHTML = '<div class="empty-rec">No card in your wallet has a rate set for ' +
         catLabel(state.category) + '. Add an "Everything else" rate as a fallback.</div>';
       return;
     }
@@ -793,22 +771,21 @@
     const per100 = (top.rate).toFixed(top.rate % 1 === 0 ? 0 : 1);
     let html = '<div class="reccard">';
     html += '<div class="reccard-art">' + cardArtHtml(top.card.name) + '</div>';
-    html += '<div class="rec-tag">★ Use this one' +
-            (state.placeName ? ' · ' + escapeHtml(state.placeName) : '') + '</div>';
+    html += '<div class="rec-tag">Recommended' +
+            (state.placeName ? ' \u00b7 ' + escapeHtml(state.placeName) : '') + '</div>';
     html += '<div class="rec-name">' + escapeHtml(top.card.name) + '</div>';
-    html += '<div class="rec-rate"><span class="rec-mult">' + per100 +
+    html += '<div class="rec-rate"><span class="rec-mult mono">' + per100 +
             '<span class="rec-mult-unit">%</span></span>' +
-            '<span class="rec-why">back on ' + catLabel(state.category).toLowerCase() +
-            (top.usedFallback ? ' (its base rate)' : '') + '</span></div>';
-    html += '<div class="rec-earn">≈ <b>$' + (top.rate).toFixed(2) +
-            '</b> back per $100 spent here</div>';
+            '<span class="rec-why">on ' + catLabel(state.category).toLowerCase() +
+            (top.usedFallback ? ' (base rate)' : '') + '</span></div>';
+    html += '<div class="rec-earn">$' + (top.rate).toFixed(2) +
+            ' <b>back per $100 spent</b></div>';
     html += '</div>';
 
-    // runners-up
     const rest = ranked.slice(1).filter(r => r.rate > 0);
     rest.forEach((r, i) => {
       html += '<div class="runner">' +
-        '<span class="runner-rank">' + (i + 2) + '</span>' +
+        '<span class="runner-rank mono">' + (i + 2) + '</span>' +
         '<span class="runner-name">' + escapeHtml(r.card.name) + '</span>' +
         '<span class="runner-rate">' + (r.rate).toFixed(r.rate % 1 === 0 ? 0 : 1) + '%</span>' +
         '</div>';
@@ -817,25 +794,20 @@
     stage.innerHTML = html;
   }
 
-  // ---------- card art: detect issuer from name, generate branded visual ----------
-  // Colors are each issuer's real, publicly-known brand color (not their artwork).
   const ISSUERS = [
-    { key: 'chase',     test: /chase/i,                          label: 'Chase',           bg: 'linear-gradient(135deg, #0A4DA1, #06335E)', network: 'visa' },
-    { key: 'amex',      test: /amex|american express/i,          label: 'American Express', bg: 'linear-gradient(135deg, #1F8FC2, #006FCF)', network: 'amex' },
-    { key: 'citi',      test: /citi/i,                            label: 'Citi',            bg: 'linear-gradient(135deg, #1F1F1F, #003A70)', network: 'mastercard' },
-    { key: 'discover',  test: /discover/i,                        label: 'Discover',        bg: 'linear-gradient(135deg, #FF6000, #B14600)', network: 'discover' },
-    { key: 'capone',    test: /capital ?one/i,                    label: 'Capital One',     bg: 'linear-gradient(135deg, #D03027, #931E17)', network: 'mastercard' },
-    { key: 'wells',     test: /wells ?fargo/i,                    label: 'Wells Fargo',     bg: 'linear-gradient(135deg, #D71E2B, #8E1217)', network: 'visa' },
-    { key: 'boa',       test: /bank of america|bofa/i,            label: 'Bank of America', bg: 'linear-gradient(135deg, #E31837, #00205B)', network: 'visa' },
-    { key: 'usbank',    test: /u\.?s\.? bank/i,                   label: 'U.S. Bank',       bg: 'linear-gradient(135deg, #002F6C, #00153A)', network: 'visa' },
-    { key: 'barclays',  test: /barclays/i,                        label: 'Barclays',        bg: 'linear-gradient(135deg, #00AEEF, #007BB6)', network: 'mastercard' },
-    { key: 'synchrony', test: /synchrony/i,                       label: 'Synchrony',       bg: 'linear-gradient(135deg, #5C2D91, #371A5C)', network: 'mastercard' },
+    { key: 'chase',     test: /chase/i,                          label: 'Chase',           bg: 'linear-gradient(160deg, #0E4A93, #0A3666)', network: 'visa' },
+    { key: 'amex',      test: /amex|american express/i,          label: 'American Express', bg: 'linear-gradient(160deg, #1A7DB8, #0A5A8C)', network: 'amex' },
+    { key: 'citi',      test: /citi/i,                            label: 'Citi',            bg: 'linear-gradient(160deg, #2B2F38, #14171D)', network: 'mastercard' },
+    { key: 'discover',  test: /discover/i,                        label: 'Discover',        bg: 'linear-gradient(160deg, #C45A1E, #8C3E12)', network: 'discover' },
+    { key: 'capone',    test: /capital ?one/i,                    label: 'Capital One',     bg: 'linear-gradient(160deg, #A82A23, #6E1B16)', network: 'mastercard' },
+    { key: 'wells',     test: /wells ?fargo/i,                    label: 'Wells Fargo',     bg: 'linear-gradient(160deg, #B31B26, #7A1217)', network: 'visa' },
+    { key: 'boa',       test: /bank of america|bofa/i,            label: 'Bank of America', bg: 'linear-gradient(160deg, #B31530, #0E1C48)', network: 'visa' },
+    { key: 'usbank',    test: /u\.?s\.? bank/i,                   label: 'U.S. Bank',       bg: 'linear-gradient(160deg, #0A2A5C, #061530)', network: 'visa' },
+    { key: 'barclays',  test: /barclays/i,                        label: 'Barclays',        bg: 'linear-gradient(160deg, #0090C9, #00628C)', network: 'mastercard' },
+    { key: 'synchrony', test: /synchrony/i,                       label: 'Synchrony',       bg: 'linear-gradient(160deg, #4A2575, #2A1545)', network: 'mastercard' },
   ];
-  const DEFAULT_ISSUER = { key: 'generic', label: 'Card', bg: 'linear-gradient(135deg, #3A4452, #1C232E)', network: 'generic' };
+  const DEFAULT_ISSUER = { key: 'generic', label: 'Card', bg: 'linear-gradient(160deg, #2E333D, #181B22)', network: 'generic' };
 
-  // ---------- preset card database ----------
-  // Verified rates as of June 2026. See premium_cards_reference.md for sourcing.
-  // Each preset maps directly onto our CATEGORIES ids so it can be loaded as-is.
   const CARD_PRESETS = [
     {
       name: 'Chase Freedom Flex',
@@ -920,7 +892,7 @@
   function networkMark(network) {
     switch (network) {
       case 'visa': return '<span class="cardart-network">VISA</span>';
-      case 'mastercard': return '<span class="cardart-dots"><span style="background:#EB5640;"></span><span style="background:#F4A828;margin-left:-6px;mix-blend-mode:screen;"></span></span>';
+      case 'mastercard': return '<span class="cardart-dots"><span style="background:#D6543F;"></span><span style="background:#E8A23C;margin-left:-5px;mix-blend-mode:screen;"></span></span>';
       case 'amex': return '<span class="cardart-network">AMEX</span>';
       case 'discover': return '<span class="cardart-network">DISCOVER</span>';
       default: return '<span class="cardart-network">CARD</span>';
@@ -939,7 +911,7 @@
   function renderWallet() {
     const w = $('wallet');
     if (state.cards.length === 0) {
-      w.innerHTML = '<div class="empty-rec" style="margin-bottom:12px;">Your wallet is empty. Add your first card below.</div>';
+      w.innerHTML = '<div class="empty-rec" style="margin-bottom:12px;">No cards yet \u2014 add your first one below.</div>';
       return;
     }
     w.innerHTML = '';
@@ -954,7 +926,7 @@
       div.innerHTML =
         cardArtHtml(card.name) +
         '<div class="card-head"><div class="card-name">' + escapeHtml(card.name) +
-        '</div><button class="card-del" title="Remove">×</button></div>' +
+        '</div><button class="card-del" title="Remove">\u00d7</button></div>' +
         '<div class="rates">' + rates + '</div>';
       div.querySelector('.card-del').onclick = () => {
         state.cards = state.cards.filter(c => c.id !== card.id);
@@ -964,12 +936,11 @@
     });
   }
 
-  // ---------- add card form ----------
   function renderRateCatOptions() {
     const sel = $('rateCat');
     sel.innerHTML = '';
     CATEGORIES.forEach(c => {
-      if (state.pendingRates[c.id] !== undefined) return; // already added
+      if (state.pendingRates[c.id] !== undefined) return;
       const o = document.createElement('option');
       o.value = c.id; o.textContent = c.label;
       sel.appendChild(o);
@@ -985,7 +956,7 @@
       line.innerHTML =
         '<span class="rl-cat">' + catLabel(cat) + '</span>' +
         '<span class="rl-val">' + (val % 1 === 0 ? val : val.toFixed(1)) + '%</span>' +
-        '<button class="rl-x" title="Remove">×</button>';
+        '<button class="rl-x" title="Remove">\u00d7</button>';
       line.querySelector('.rl-x').onclick = () => {
         delete state.pendingRates[cat];
         renderPendingRates(); renderRateCatOptions();
@@ -1008,9 +979,8 @@
     if (e.key === 'Enter') { e.preventDefault(); $('addRateBtn').click(); }
   });
 
-  // ---------- card name autocomplete + preset auto-fill ----------
   let activeSuggestIdx = -1;
-  let lastLoadedPreset = null; // tracks which preset name is currently loaded, so we can clear it if edited away
+  let lastLoadedPreset = null;
 
   function showPresetBanner(preset) {
     lastLoadedPreset = preset.name;
@@ -1058,13 +1028,9 @@
 
   $('cardName').addEventListener('input', () => {
     const val = $('cardName').value;
-
-    // if the text no longer matches the loaded preset, drop the banner
-    // (treat it as a custom/edited card name from here on)
     if (lastLoadedPreset && val.trim().toLowerCase() !== lastLoadedPreset.toLowerCase()) {
       hidePresetBanner();
     }
-
     const exact = findPreset(val);
     if (exact) {
       loadPreset(exact);
@@ -1093,7 +1059,6 @@
   });
 
   $('cardName').addEventListener('blur', () => {
-    // small delay so a click on a suggestion still registers before we hide the list
     setTimeout(hideSuggestions, 120);
   });
 
@@ -1101,7 +1066,6 @@
     const name = $('cardName').value.trim();
     if (!name) { $('cardName').focus(); return; }
     if (Object.keys(state.pendingRates).length === 0) {
-      // require at least one rate
       $('rateVal').focus();
       return;
     }
@@ -1110,7 +1074,6 @@
       name: name,
       rates: { ...state.pendingRates },
     });
-    // reset
     $('cardName').value = '';
     state.pendingRates = {};
     hidePresetBanner();
@@ -1127,7 +1090,6 @@
     }
   };
 
-  // ---------- geolocation (on/off toggle) ----------
   let watchId = null;
 
   $('locBtn').onclick = () => {
@@ -1140,7 +1102,7 @@
 
   function turnLocationOn() {
     if (!navigator.geolocation) {
-      setLocLabel('Location isn\'t available in this browser. Pick a category instead.');
+      setLocLabel('Location isn\'t available in this browser. Select a category instead.');
       return;
     }
     state.locOn = true;
@@ -1148,7 +1110,7 @@
     $('locBtn').textContent = 'Location on';
     $('locBtn').classList.add('on');
     $('pulse').classList.add('live');
-    setLocLabel('Finding you…');
+    setLocLabel('Locating\u2026');
 
     watchId = navigator.geolocation.watchPosition(onGeoOk, onGeoErr, {
       enableHighAccuracy: true, timeout: 10000, maximumAge: 60000,
@@ -1162,10 +1124,10 @@
     }
     state.locOn = false;
     state.placeName = null;
-    $('locBtn').textContent = isMobile ? 'Use location' : 'Try location anyway';
+    $('locBtn').textContent = isMobile ? 'Enable location' : 'Try location anyway';
     $('locBtn').classList.remove('on');
     $('pulse').classList.remove('live');
-    setLocLabel('Location off — pick a category below, or turn it on.');
+    setLocLabel('Location off — select a category below, or enable it.');
   }
 
   function onGeoOk(pos) {
@@ -1175,17 +1137,15 @@
 
   function onGeoErr(err) {
     $('pulse').classList.remove('live');
-    $('locBtn').textContent = isMobile ? 'Use location' : 'Try location anyway';
+    $('locBtn').textContent = isMobile ? 'Enable location' : 'Try location anyway';
     $('locBtn').classList.remove('on');
     state.locOn = false;
-    setLocLabel('Couldn\'t get location (' + (err.code === 1 ? 'permission denied' : 'unavailable') + '). Pick a category below.');
+    setLocLabel('Couldn\'t get location (' + (err.code === 1 ? 'permission denied' : 'unavailable') + '). Select a category below.');
   }
 
-  // reverse-geocode + nearby category guess via OpenStreetMap (no key needed)
   async function lookupPlace(lat, lon) {
-    setLocLabel('Checking what\'s around you…');
+    setLocLabel('Checking nearby places\u2026');
     try {
-      // find nearby amenities within ~60m
       const q = `[out:json][timeout:10];(` +
         `node(around:70,${lat},${lon})[amenity];` +
         `node(around:70,${lat},${lon})[shop];` +
@@ -1199,18 +1159,17 @@
         if (!state.manualOverride) {
           state.category = guess.cat;
           state.placeName = guess.name;
-          setLocLabel('You seem to be at <b>' + escapeHtml(guess.name) + '</b> — ' + catLabel(guess.cat) + '. Tap a chip to change.');
+          setLocLabel('Detected <b>' + escapeHtml(guess.name) + '</b> \u2014 ' + catLabel(guess.cat) + '. Select a different category to override.');
         } else {
-          // user deselected manually — show where they are without forcing the category back on
-          setLocLabel('You seem to be at <b>' + escapeHtml(guess.name) + '</b>. Tap a chip to pick a category.');
+          setLocLabel('Detected <b>' + escapeHtml(guess.name) + '</b>. Select a category to continue.');
         }
       } else {
         state.placeName = null;
-        setLocLabel('Found you, but couldn\'t tell the place type. Pick a category below.');
+        setLocLabel('Location found, but the place type is unclear. Select a category below.');
       }
       renderChips(); renderRec();
     } catch (e) {
-      setLocLabel('Located you, but the place lookup failed. Pick a category below.');
+      setLocLabel('Location found, but the place lookup failed. Select a category below.');
     }
   }
 
@@ -1234,34 +1193,25 @@
     }[m]));
   }
 
-  // ---------- device-specific setup ----------
   document.body.classList.add(isMobile ? 'is-mobile' : 'is-desktop');
 
   if (!isMobile) {
-    // Desktop: geolocation in a browser is usually IP-based and city-level at
-    // best, so steer people toward the manual chips instead of over-promising.
     $('locBtn').textContent = 'Try location anyway';
-    $('locLabel').textContent = 'On a computer? Pick a category below — it\u2019s usually more accurate than browser location.';
+    $('locLabel').textContent = 'On desktop, browser location is usually less precise. Select a category below for accuracy.';
   } else {
     $('desktopNote').remove();
   }
 
-  // ---------- init ----------
   renderChips();
   renderRateCatOptions();
   renderPendingRates();
   renderWallet();
   renderRec();
 
-  // ---------- PWA: register service worker + auto-update ----------
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
-        // Ask the browser to check for a new sw.js right now, not on its own schedule
         reg.update();
-
-        // If a new service worker takes control, the cache version has changed —
-        // reload once so the page picks up the fresh files instead of stale ones.
         let refreshed = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (refreshed) return;
